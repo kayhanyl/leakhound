@@ -1,4 +1,4 @@
-name: "leakhound"
+name: "LeakHound Secret Scanner"
 description: "Precise, safety-first secret scanner for CI diffs and git history."
 branding:
   icon: "shield"
