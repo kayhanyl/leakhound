@@ -1,0 +1,70 @@
+name: "leakhound"
+description: "Precise, safety-first secret scanner for CI diffs and git history."
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  mode:
+    description: "Scan mode: diff | tree | working | history"
+    default: "diff"
+  base:
+    description: "Base ref for diff mode (defaults to the PR base on pull_request events)"
+    default: ""
+  head:
+    description: "Head ref for diff mode"
+    default: "HEAD"
+  config:
+    description: "Path to a .leakhound.yml / .leakhound.json"
+    default: ""
+  fail-on-findings:
+    description: "Fail the job (block the merge) when secrets are found"
+    default: "true"
+  report-github:
+    description: "Comment on the PR / open a tracking issue with redacted findings"
+    default: "true"
+  github-token:
+    description: "Token used to post comments and issues"
+    default: ${{ github.token }}
+  python-version:
+    description: "Python version to run leakhound with"
+    default: "3.12"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install leakhound
+      shell: bash
+      run: pip install "${{ github.action_path }}"
+
+    - name: Run leakhound
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        LH_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        set -euo pipefail
+        mode="${{ inputs.mode }}"
+        args=(scan --mode "$mode")
+
+        if [ "$mode" = "diff" ]; then
+          base="${{ inputs.base }}"
+          if [ -z "$base" ]; then base="${LH_PR_BASE_SHA:-}"; fi
+          if [ -z "$base" ]; then
+            echo "leakhound: diff mode needs a base ref; falling back to tree mode." >&2
+            args=(scan --mode tree)
+          else
+            args+=(--base "$base" --head "${{ inputs.head }}")
+          fi
+        fi
+
+        if [ -n "${{ inputs.config }}" ]; then args+=(--config "${{ inputs.config }}"); fi
+        if [ "${{ inputs.report-github }}" = "true" ]; then args+=(--report-github); fi
+        if [ "${{ inputs.fail-on-findings }}" != "true" ]; then args+=(--no-fail); fi
+
+        echo "leakhound ${args[*]}"
+        leakhound "${args[@]}"

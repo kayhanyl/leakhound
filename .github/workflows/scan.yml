@@ -1,0 +1,38 @@
+name: leakhound
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+# Least privilege: read the code, and only write to the surfaces we report on.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so diff/history modes have the base commit available.
+          fetch-depth: 0
+
+      # On a PR: scan only the diff and FAIL (block merge) if a secret is added.
+      - name: Scan pull request
+        if: github.event_name == 'pull_request'
+        uses: ./
+        with:
+          mode: diff
+          fail-on-findings: "true"
+
+      # On a push to the default branch: scan the tree and, if something already
+      # landed, open/update a tracking issue with rotation-first remediation.
+      - name: Scan default branch
+        if: github.event_name == 'push'
+        uses: ./
+        with:
+          mode: tree
+          fail-on-findings: "true"

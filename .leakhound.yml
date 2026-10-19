@@ -1,0 +1,17 @@
+# leakhound's own configuration (it scans itself in CI — see .github/workflows/scan.yml).
+# The test suite deliberately contains synthetic, token-shaped strings, so we
+# exclude it here. This is the legitimate use of exclude_paths; do NOT exclude
+# real source directories to silence findings.
+entropy_threshold: 3.8
+
+exclude_paths:
+  - "tests/**"
+  - ".venv/**"
+  - "**/.pytest_cache/**"
+  - "**/*.egg-info/**"
+
+allow:
+  strings: []
+  patterns: []
+
+disable_detectors: []

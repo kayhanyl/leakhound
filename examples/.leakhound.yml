@@ -1,0 +1,23 @@
+# Example leakhound config. Drop this at your repo root as `.leakhound.yml`.
+
+# Minimum Shannon entropy (bits/char) for the generic "secret-like assignment"
+# rule. Raise it to cut false positives, lower it to catch more.
+entropy_threshold: 3.5
+
+# Glob patterns to skip. Defaults already cover node_modules, dist, build,
+# vendor, lockfiles, minified JS and source maps.
+exclude_paths:
+  - "tests/fixtures/**"
+  - "docs/**/*.md"
+
+allow:
+  # Exact values that are known-safe (e.g. a public sandbox key).
+  strings:
+    - "AKIAIOSFODNN7EXAMPLE"
+  # Regexes; if a detected value matches any, it is ignored.
+  patterns:
+    - "^sk_live_0+$"
+
+# Turn off noisy detectors for your codebase if needed.
+disable_detectors:
+  - "jwt"
